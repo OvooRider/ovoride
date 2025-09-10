@@ -109,6 +109,17 @@ class RideController extends Controller
             return apiResponse('not_found', 'error', $notify);
         }
 
+        $actualMinutes = $ride->created_at->diffInMinutes(now());
+        $expectedMinutes = $ride->expected_minutes; // هذه موجودة من وقت الإنشاء
+        $extraMinutes = max(0, $actualMinutes - $expectedMinutes);
+
+        // إضافة تكلفة التأخير
+        $extraCharge = $extraMinutes * 0.08;
+        $ride->amount += $extraCharge;
+        $ride->status = Status::RIDE_COMPLETED;
+        $ride->recommend_amount=$ride->amount;
+        $ride->save();
+
         // update the driver current zone
         if ($ride->ride_type == Status::INTER_CITY_RIDE) {
             $zones       = Zone::active()->get();
